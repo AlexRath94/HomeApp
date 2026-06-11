@@ -1,0 +1,666 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#275D42">
+<title>HomeApp Rath</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#F2F5F3; --card:#FFFFFF; --ink:#1C2A23; --muted:#5C6B62;
+    --line:#DCE5DF; --green:#2F6F4F; --green-deep:#275D42;
+    --green-soft:rgba(47,111,79,.12); --amber:#B7791F; --amber-soft:rgba(183,121,31,.10);
+    --danger:#A4392E; --radius:14px;
+    --display:'Bricolage Grotesque', system-ui, sans-serif;
+    --body:system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+    --mono:ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#121714; --card:#1B221E; --ink:#E9F0EB; --muted:#93A29A;
+      --line:#2A342E; --green:#4C9C73; --green-deep:#1E4A35;
+      --green-soft:rgba(76,156,115,.16); --amber:#D99A3D; --amber-soft:rgba(217,154,61,.12);
+      --danger:#D96A5E;
+    }
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    background:var(--bg); color:var(--ink); font-family:var(--body);
+    font-size:16px; line-height:1.45;
+    padding:max(12px, env(safe-area-inset-top)) 14px calc(96px + env(safe-area-inset-bottom));
+    max-width:560px; margin:0 auto;
+  }
+
+  /* ---------- Kopf ---------- */
+  header{display:flex; align-items:center; justify-content:space-between; gap:10px; margin:6px 2px 16px}
+  h1{font-family:var(--display); font-weight:800; font-size:28px; letter-spacing:-.02em; margin:0}
+  h1 .dot{color:var(--green)}
+  .due-chip{
+    font-family:var(--display); font-weight:700; font-size:14px;
+    background:var(--amber-soft); color:var(--amber);
+    border:1px solid currentColor; border-radius:999px; padding:5px 12px; white-space:nowrap;
+  }
+  .due-chip.none{background:var(--green-soft); color:var(--green)}
+
+  .banner{
+    background:var(--amber-soft); border:1px solid var(--amber); color:var(--ink);
+    border-radius:var(--radius); padding:10px 12px; font-size:14px; margin:0 0 14px;
+  }
+
+  /* ---------- Raum-Etiketten ---------- */
+  .room-label{
+    display:inline-block; font-family:var(--display); font-weight:700; font-size:11px;
+    text-transform:uppercase; letter-spacing:.14em;
+    background:var(--green-soft); color:var(--green);
+    padding:4px 12px; border-radius:3px; transform:rotate(-.8deg);
+    margin:18px 0 8px;
+  }
+  section:first-of-type .room-label{margin-top:4px}
+
+  /* ---------- Aufgabenkarten ---------- */
+  .task{
+    background:var(--card); border:1px solid var(--line); border-radius:var(--radius);
+    margin-bottom:10px; overflow:hidden;
+  }
+  .task.due{border-left:4px solid var(--amber)}
+  .task-row{display:flex; align-items:center; gap:10px; padding:13px 12px 13px 14px; cursor:pointer}
+  .task-info{flex:1; min-width:0}
+  .task-name{font-weight:600; font-size:16.5px}
+  .task-status{font-size:13px; color:var(--muted); margin-top:2px}
+  .task.due .task-status{color:var(--amber); font-weight:600}
+  .check-btn{
+    flex:none; width:46px; height:46px; border-radius:50%;
+    border:2px solid var(--green); background:transparent; color:var(--green);
+    font-size:22px; line-height:1; cursor:pointer; transition:transform .12s;
+  }
+  .task.due .check-btn{background:var(--green); color:#fff; border-color:var(--green)}
+  .check-btn:active{transform:scale(.88)}
+  .check-btn.pulse{animation:pulse .45s}
+  @keyframes pulse{0%{transform:scale(1)}40%{transform:scale(1.25)}100%{transform:scale(1)}}
+
+  .task-details{display:none; border-top:1px dashed var(--line); padding:12px 14px 14px; font-size:14px}
+  .task.open .task-details{display:block}
+  .detail-label{font-size:11px; text-transform:uppercase; letter-spacing:.1em; color:var(--muted); margin:10px 0 4px}
+  .detail-label:first-child{margin-top:0}
+  .nfc-url{
+    font-family:var(--mono); font-size:12px; background:var(--bg);
+    border:1px solid var(--line); border-radius:8px; padding:8px 10px;
+    word-break:break-all; user-select:all;
+  }
+  .btn-row{display:flex; flex-wrap:wrap; gap:8px; margin-top:10px}
+  .btn{
+    font-family:var(--body); font-weight:600; font-size:14px;
+    border-radius:10px; padding:9px 14px; cursor:pointer;
+    border:1px solid var(--line); background:var(--card); color:var(--ink);
+  }
+  .btn.primary{background:var(--green); border-color:var(--green); color:#fff}
+  .btn.danger{color:var(--danger); border-color:var(--danger); background:transparent}
+  .btn:disabled{opacity:.55; cursor:default}
+  .history{margin:6px 0 0; padding-left:18px; color:var(--muted); font-size:13px}
+  .history li{margin:2px 0}
+
+  .empty{
+    text-align:center; color:var(--muted); padding:46px 18px; border:1.5px dashed var(--line);
+    border-radius:var(--radius); margin-top:10px;
+  }
+  .empty b{color:var(--ink)}
+
+  /* ---------- Neue Aufgabe (FAB) ---------- */
+  .fab{
+    position:fixed; right:16px; bottom:calc(18px + env(safe-area-inset-bottom));
+    background:var(--green); color:#fff; border:none; border-radius:999px;
+    font-family:var(--display); font-weight:700; font-size:16px;
+    padding:15px 22px; cursor:pointer; box-shadow:0 6px 18px rgba(0,0,0,.22);
+  }
+  .fab:active{transform:scale(.96)}
+
+  /* ---------- Modal (Formular) ---------- */
+  .modal-bg{
+    display:none; position:fixed; inset:0; background:rgba(10,16,12,.55);
+    align-items:flex-end; justify-content:center; z-index:50;
+  }
+  .modal-bg.show{display:flex}
+  .modal{
+    background:var(--card); border-radius:18px 18px 0 0; width:100%; max-width:560px;
+    padding:20px 18px calc(20px + env(safe-area-inset-bottom));
+  }
+  .modal h2{font-family:var(--display); font-weight:700; font-size:20px; margin:0 0 14px}
+  .field{margin-bottom:13px}
+  .field label{display:block; font-size:13px; font-weight:600; color:var(--muted); margin-bottom:5px}
+  .field input{
+    width:100%; font-size:16px; padding:11px 12px; border-radius:10px;
+    border:1.5px solid var(--line); background:var(--bg); color:var(--ink);
+  }
+  .field input:focus{outline:2px solid var(--green); outline-offset:1px; border-color:var(--green)}
+  .hint{font-size:12.5px; color:var(--muted); margin-top:4px}
+
+  /* ---------- Stempel-Overlay ---------- */
+  .overlay{
+    display:none; position:fixed; inset:0; z-index:100;
+    background:var(--green-deep); color:#fff;
+    flex-direction:column; align-items:center; justify-content:center;
+    text-align:center; padding:24px;
+  }
+  .overlay.show{display:flex}
+  .overlay.neutral{background:#27313B}
+  .stamp{
+    width:190px; height:190px; border:5px solid rgba(255,255,255,.92); border-radius:50%;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    transform:rotate(-7deg); animation:stamp-in .5s cubic-bezier(.2,1.4,.4,1);
+  }
+  .stamp .word{font-family:var(--display); font-weight:800; font-size:26px; letter-spacing:.12em}
+  .stamp .tick{font-size:38px; line-height:1; margin-bottom:2px}
+  @keyframes stamp-in{0%{transform:scale(2.1) rotate(-7deg); opacity:0}65%{transform:scale(.93) rotate(-7deg); opacity:1}100%{transform:scale(1) rotate(-7deg)}}
+  @media (prefers-reduced-motion: reduce){
+    .stamp{animation:none}
+    .check-btn.pulse{animation:none}
+  }
+  .overlay .task-title{font-family:var(--display); font-weight:700; font-size:23px; margin:26px 0 4px}
+  .overlay .sub{opacity:.85; font-size:15px; max-width:340px}
+  .overlay .btn-row{margin-top:30px; justify-content:center}
+  .overlay .btn{background:transparent; border:1.5px solid rgba(255,255,255,.8); color:#fff}
+  .overlay .btn.solid{background:#fff; color:var(--green-deep); border-color:#fff}
+
+  /* ---------- Toast ---------- */
+  .toast{
+    position:fixed; left:50%; transform:translateX(-50%);
+    bottom:calc(84px + env(safe-area-inset-bottom));
+    background:var(--ink); color:var(--bg); font-size:14px; font-weight:600;
+    padding:11px 16px; border-radius:999px; z-index:120;
+    display:none; align-items:center; gap:12px; max-width:90vw;
+    box-shadow:0 6px 18px rgba(0,0,0,.3);
+  }
+  .toast.show{display:flex}
+  .toast button{
+    background:none; border:none; color:inherit; font-weight:800; font-size:14px;
+    cursor:pointer; text-decoration:underline; padding:0;
+  }
+
+  /* ---------- Fußbereich ---------- */
+  .footer{margin-top:30px; border-top:1px solid var(--line); padding-top:14px}
+  details{margin-bottom:10px}
+  summary{font-weight:600; cursor:pointer; padding:6px 0; font-size:15px}
+  details .inner{font-size:14px; color:var(--muted); padding:4px 0 8px}
+  details .inner b{color:var(--ink)}
+  details ol{padding-left:20px; margin:6px 0}
+  details ol li{margin:3px 0}
+  .footer .btn-row{margin-top:4px}
+  .version{font-size:12px; color:var(--muted); margin-top:14px; text-align:center}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>HomeApp<span class="dot"> Rath</span></h1>
+  <span class="due-chip" id="dueChip"></span>
+</header>
+
+<div id="banners"></div>
+<main id="list"></main>
+
+<button class="fab" id="fabAdd">+ Neue Aufgabe</button>
+
+<!-- Formular: Aufgabe anlegen / bearbeiten -->
+<div class="modal-bg" id="modalBg">
+  <div class="modal">
+    <h2 id="modalTitle">Neue Aufgabe</h2>
+    <div class="field">
+      <label for="fName">Was ist zu tun?</label>
+      <input id="fName" type="text" placeholder="z. B. Saugen Erdgeschoss" autocomplete="off">
+    </div>
+    <div class="field">
+      <label for="fRoom">Bereich / Raum (optional)</label>
+      <input id="fRoom" type="text" list="roomList" placeholder="z. B. Erdgeschoss" autocomplete="off">
+      <datalist id="roomList"></datalist>
+    </div>
+    <div class="field">
+      <label for="fInterval">Wiederholen alle … Tage (optional)</label>
+      <input id="fInterval" type="number" min="1" inputmode="numeric" placeholder="z. B. 7">
+      <div class="hint">Leer lassen, wenn die Aufgabe nicht automatisch wieder fällig werden soll.</div>
+    </div>
+    <div class="btn-row">
+      <button class="btn primary" id="btnSave">Speichern</button>
+      <button class="btn" id="btnCancel">Abbrechen</button>
+    </div>
+  </div>
+</div>
+
+<!-- Stempel-Overlay (NFC-Scan / Bestätigung) -->
+<div class="overlay" id="overlay">
+  <div class="stamp" id="stampEl"><span class="tick">✓</span><span class="word" id="stampWord">ERLEDIGT</span></div>
+  <div class="task-title" id="ovTitle"></div>
+  <div class="sub" id="ovSub"></div>
+  <div class="btn-row">
+    <button class="btn solid" id="ovClose">Alles klar</button>
+    <button class="btn" id="ovUndo">Rückgängig</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"><span id="toastMsg"></span><button id="toastAction"></button></div>
+
+<div class="footer">
+  <details>
+    <summary>NFC-Tags beschreiben</summary>
+    <div class="inner">
+      <b>Android (Chrome):</b> Aufgabe antippen → „Tag jetzt beschreiben“ → NFC-Tag an die Rückseite des Handys halten. Fertig.
+      <br><br>
+      <b>iPhone (mit NFC Tools):</b>
+      <ol>
+        <li>Aufgabe antippen → „Link kopieren“</li>
+        <li>NFC Tools öffnen → <b>Schreiben</b> → <b>Datensatz hinzufügen</b> → <b>URL/Webadresse</b></li>
+        <li>Link einfügen → <b>Schreiben</b> → Tag anhalten</li>
+      </ol>
+      <b>Scannen im Alltag:</b> iPhone (XS oder neuer) einfach mit eingeschaltetem Bildschirm oben an den Tag halten — der Link öffnet sich automatisch. Android: Tag an die Rückseite halten (NFC muss in den Einstellungen aktiv sein). Günstige NTAG213-Tags reichen völlig.
+    </div>
+  </details>
+  <details>
+    <summary>Daten &amp; Geräte</summary>
+    <div class="inner">
+      Die Aufgaben werden <b>lokal im Browser dieses Geräts</b> gespeichert. Mit <b>Exportieren / Importieren</b> kannst du ein Backup anlegen oder die Liste auf ein zweites Handy übertragen.
+      <br><br>
+      <b>iPhone-Hinweis:</b> NFC-Tags öffnen immer Safari. Nutze die App dort am besten als Lesezeichen — ein Symbol auf dem Home-Bildschirm hätte einen getrennten Speicher und würde die Häkchen nicht sehen.
+    </div>
+  </details>
+  <details>
+    <summary>App erweitern</summary>
+    <div class="inner">
+      Der Code dieser Datei ist kommentiert und bewusst erweiterbar gehalten. Für neue Funktionen (z. B. Statistiken, Punktesystem, Synchronisation zwischen Geräten) einfach die Datei bei Claude hochladen und den Wunsch beschreiben.
+    </div>
+  </details>
+  <div class="btn-row">
+    <button class="btn" id="btnExport">Exportieren</button>
+    <button class="btn" id="btnImport">Importieren</button>
+    <input type="file" id="fileImport" accept="application/json,.json" hidden>
+  </div>
+  <div class="version">HomeApp Rath · v1.0</div>
+</div>
+
+<script>
+/* =====================================================================
+   HomeApp Rath – Haushalts-To-dos per NFC-Tag
+   ---------------------------------------------------------------------
+   Funktionsweise:
+   - Jede Aufgabe hat eine eindeutige ID. Der zugehörige NFC-Link lautet
+     <App-Adresse>#do=<ID>. Wird die App über diesen Link geöffnet
+     (z. B. durch Scannen eines NFC-Tags), wird die Aufgabe als erledigt
+     eingetragen und ein Bestätigungs-„Stempel“ angezeigt.
+   - Daten liegen in localStorage (Schema unten, versioniert für spätere
+     Erweiterungen). Export/Import als JSON.
+   - Auf Android/Chrome können Tags direkt per Web NFC beschrieben werden.
+   ===================================================================== */
+
+'use strict';
+
+/* ---------- Speicher (mit Fallback für Vorschau-Umgebungen) ---------- */
+const KEY = 'homeapp-rath-v1';
+let memStore = null;
+function storageOk(){
+  try{ localStorage.setItem('__t','1'); localStorage.removeItem('__t'); return true; }
+  catch(e){ return false; }
+}
+const HAS_STORAGE = storageOk();
+function loadState(){
+  try{
+    const raw = HAS_STORAGE ? localStorage.getItem(KEY) : memStore;
+    if(!raw) return null;
+    const data = JSON.parse(raw);
+    if(!data || !Array.isArray(data.tasks)) return null;
+    return data;
+  }catch(e){ return null; }
+}
+function saveState(){
+  const raw = JSON.stringify(state);
+  if(HAS_STORAGE) localStorage.setItem(KEY, raw); else memStore = raw;
+}
+
+/* ---------- Zustand ---------- */
+let state = loadState();
+if(!state){
+  // Erststart: Beispiel-Aufgaben (frei lösch- und änderbar)
+  state = { v:1, tasks:[
+    mkTask('Saugen Erdgeschoss','Erdgeschoss',7),
+    mkTask('Saugen Obergeschoss','Obergeschoss',7),
+    mkTask('Bad putzen','Bad',7)
+  ]};
+  saveState();
+}
+let expanded = new Set();   // aufgeklappte Aufgaben
+let editId = null;          // gerade bearbeitete Aufgabe
+let lastUndoId = null;      // für „Rückgängig“ in Toast/Overlay
+
+function mkTask(name, room, intervalDays){
+  return { id: uid(), name, room: room||'', intervalDays: intervalDays||null,
+           lastDone: null, history: [] };
+}
+function uid(){
+  const chars='abcdefghijklmnopqrstuvwxyz0123456789'; let s='';
+  for(let i=0;i<6;i++) s += chars[Math.floor(Math.random()*chars.length)];
+  return state && state.tasks.some(t=>t.id===s) ? uid() : s;
+}
+
+/* ---------- Hilfsfunktionen ---------- */
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const DAY = 86400000;
+
+function baseUrl(){ return location.origin + location.pathname; }
+function taskUrl(t){ return baseUrl() + '#do=' + t.id; }
+
+function fmtTime(ts){
+  return new Date(ts).toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'}) + ' Uhr';
+}
+function fmtFull(ts){
+  return new Date(ts).toLocaleDateString('de-DE',{weekday:'short',day:'2-digit',month:'2-digit',year:'numeric'}) + ', ' + fmtTime(ts);
+}
+function fmtAgo(ts){
+  const now = Date.now();
+  const mins = Math.floor((now-ts)/60000);
+  if(mins < 1) return 'gerade eben';
+  if(mins < 60) return 'vor ' + mins + ' Min.';
+  const d = new Date(); const startToday = new Date(d.getFullYear(),d.getMonth(),d.getDate()).getTime();
+  if(ts >= startToday) return 'heute, ' + fmtTime(ts);
+  if(ts >= startToday - DAY) return 'gestern';
+  return 'vor ' + Math.round((startToday - ts)/DAY + 0.5) + ' Tagen';
+}
+function statusOf(t){
+  if(!t.lastDone) return {due:true, label:'Noch nie erledigt'};
+  if(t.intervalDays){
+    if(Date.now() >= t.lastDone + t.intervalDays*DAY)
+      return {due:true, label:'Fällig · zuletzt ' + fmtAgo(t.lastDone)};
+    return {due:false, label:'Erledigt ' + fmtAgo(t.lastDone)};
+  }
+  return {due:false, label:'Zuletzt ' + fmtAgo(t.lastDone)};
+}
+
+/* ---------- Aktionen ---------- */
+function markDone(t){
+  t.lastDone = Date.now();
+  t.history.push(t.lastDone);
+  if(t.history.length > 30) t.history = t.history.slice(-30);
+  saveState(); render();
+}
+function undoDone(t){
+  if(!t.history.length) return;
+  t.history.pop();
+  t.lastDone = t.history.length ? t.history[t.history.length-1] : null;
+  saveState(); render();
+}
+function deleteTask(t){
+  if(!confirm('„' + t.name + '“ wirklich löschen?\nEin darauf beschriebener NFC-Tag verliert seine Funktion.')) return;
+  state.tasks = state.tasks.filter(x => x.id !== t.id);
+  expanded.delete(t.id);
+  saveState(); render();
+  showToast('Aufgabe gelöscht');
+}
+
+/* ---------- Darstellung ---------- */
+function render(){
+  // Fällig-Zähler
+  const dueCount = state.tasks.filter(t => statusOf(t).due).length;
+  const chip = $('dueChip');
+  chip.textContent = dueCount ? dueCount + ' fällig' : 'Alles erledigt';
+  chip.classList.toggle('none', dueCount === 0);
+
+  // Gruppierung nach Bereich
+  const groups = {};
+  for(const t of state.tasks){
+    const r = t.room.trim() || 'Allgemein';
+    (groups[r] = groups[r] || []).push(t);
+  }
+  const rooms = Object.keys(groups).sort((a,b)=>a.localeCompare(b,'de'));
+
+  const list = $('list');
+  if(!state.tasks.length){
+    list.innerHTML = '<div class="empty"><b>Noch keine Aufgaben.</b><br>Lege unten rechts die erste an — danach bekommt sie ihren eigenen NFC-Link.</div>';
+    return;
+  }
+
+  let html = '';
+  for(const room of rooms){
+    html += '<section><span class="room-label">' + esc(room) + '</span>';
+    for(const t of groups[room]){
+      const st = statusOf(t);
+      html += `
+      <div class="task ${st.due?'due':''} ${expanded.has(t.id)?'open':''}" data-id="${t.id}">
+        <div class="task-row" data-act="toggle">
+          <div class="task-info">
+            <div class="task-name">${esc(t.name)}</div>
+            <div class="task-status">${esc(st.label)}${t.intervalDays ? ' · alle ' + t.intervalDays + ' Tage' : ''}</div>
+          </div>
+          <button class="check-btn" data-act="check" aria-label="${esc(t.name)} als erledigt markieren">✓</button>
+        </div>
+        <div class="task-details">
+          <div class="detail-label">NFC-Link dieser Aufgabe</div>
+          <div class="nfc-url">${esc(taskUrl(t))}</div>
+          <div class="btn-row">
+            ${('NDEFReader' in window) ? '<button class="btn primary" data-act="nfc">Tag jetzt beschreiben</button>' : ''}
+            <button class="btn" data-act="copy">Link kopieren</button>
+          </div>
+          <div class="detail-label">Verlauf</div>
+          ${t.history.length
+            ? '<ul class="history">' + t.history.slice(-5).reverse().map(ts=>'<li>'+esc(fmtFull(ts))+'</li>').join('') + '</ul>'
+            : '<div class="hint">Noch keine Einträge.</div>'}
+          <div class="btn-row">
+            ${t.history.length ? '<button class="btn" data-act="undo">Letzten Eintrag zurücknehmen</button>' : ''}
+            <button class="btn" data-act="edit">Bearbeiten</button>
+            <button class="btn danger" data-act="del">Löschen</button>
+          </div>
+        </div>
+      </div>`;
+    }
+    html += '</section>';
+  }
+  list.innerHTML = html;
+}
+
+/* Klicks in der Liste (Delegation) */
+$('list').addEventListener('click', async (ev)=>{
+  const actEl = ev.target.closest('[data-act]');
+  if(!actEl) return;
+  const card = ev.target.closest('.task');
+  const t = state.tasks.find(x => x.id === card.dataset.id);
+  if(!t) return;
+  const act = actEl.dataset.act;
+
+  if(act === 'toggle'){
+    expanded.has(t.id) ? expanded.delete(t.id) : expanded.add(t.id);
+    render();
+  }
+  else if(act === 'check'){
+    actEl.classList.add('pulse');
+    markDone(t);
+    lastUndoId = t.id;
+    showToast('„' + t.name + '“ erledigt ✓', 'Rückgängig', ()=>{ undoDone(t); showToast('Zurückgenommen'); });
+  }
+  else if(act === 'copy'){
+    const ok = await copyText(taskUrl(t));
+    showToast(ok ? 'Link kopiert — jetzt in NFC Tools als URL schreiben' : 'Kopieren nicht möglich — Link gedrückt halten und manuell kopieren');
+  }
+  else if(act === 'nfc'){ writeNfcTag(t, actEl); }
+  else if(act === 'undo'){ undoDone(t); showToast('Letzter Eintrag zurückgenommen'); }
+  else if(act === 'edit'){ openModal(t); }
+  else if(act === 'del'){ deleteTask(t); }
+});
+
+/* ---------- Web NFC (Android / Chrome) ---------- */
+async function writeNfcTag(t, btn){
+  const orig = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = 'Tag ans Handy halten …';
+  try{
+    const ndef = new NDEFReader();
+    await ndef.write({ records: [{ recordType:'url', data: taskUrl(t) }] });
+    showToast('Tag beschrieben ✓ — zum Testen kurz scannen');
+  }catch(e){
+    if(e.name === 'NotAllowedError') showToast('NFC-Berechtigung wurde abgelehnt');
+    else showToast('Schreiben fehlgeschlagen: ' + e.message);
+  }finally{
+    btn.disabled = false;
+    btn.textContent = orig;
+  }
+}
+
+/* ---------- Kopieren ---------- */
+async function copyText(text){
+  try{ await navigator.clipboard.writeText(text); return true; }
+  catch(e){
+    try{
+      const ta = document.createElement('textarea');
+      ta.value = text; ta.style.position='fixed'; ta.style.opacity='0';
+      document.body.appendChild(ta); ta.select();
+      const ok = document.execCommand('copy');
+      ta.remove(); return ok;
+    }catch(e2){ return false; }
+  }
+}
+
+/* ---------- Formular ---------- */
+function openModal(t){
+  editId = t ? t.id : null;
+  $('modalTitle').textContent = t ? 'Aufgabe bearbeiten' : 'Neue Aufgabe';
+  $('fName').value = t ? t.name : '';
+  $('fRoom').value = t ? t.room : '';
+  $('fInterval').value = t && t.intervalDays ? t.intervalDays : '';
+  // Bereichs-Vorschläge aus vorhandenen Aufgaben
+  const rooms = [...new Set(state.tasks.map(x=>x.room.trim()).filter(Boolean))];
+  $('roomList').innerHTML = rooms.map(r=>'<option value="'+esc(r)+'">').join('');
+  $('modalBg').classList.add('show');
+  setTimeout(()=>$('fName').focus(), 50);
+}
+function closeModal(){ $('modalBg').classList.remove('show'); editId = null; }
+
+$('fabAdd').addEventListener('click', ()=>openModal(null));
+$('btnCancel').addEventListener('click', closeModal);
+$('modalBg').addEventListener('click', ev=>{ if(ev.target === $('modalBg')) closeModal(); });
+$('btnSave').addEventListener('click', ()=>{
+  const name = $('fName').value.trim();
+  if(!name){ $('fName').focus(); return; }
+  const room = $('fRoom').value.trim();
+  const iv = parseInt($('fInterval').value, 10);
+  const intervalDays = (iv > 0) ? iv : null;
+  if(editId){
+    const t = state.tasks.find(x=>x.id===editId);
+    if(t){ t.name = name; t.room = room; t.intervalDays = intervalDays; }
+  }else{
+    const t = mkTask(name, room, intervalDays);
+    state.tasks.push(t);
+    expanded.add(t.id);   // direkt aufklappen, damit der NFC-Link sichtbar ist
+  }
+  saveState(); render(); closeModal();
+});
+
+/* ---------- Toast ---------- */
+let toastTimer = null;
+function showToast(msg, actionLabel, actionFn){
+  const el = $('toast');
+  $('toastMsg').textContent = msg;
+  const btn = $('toastAction');
+  if(actionLabel){
+    btn.style.display='inline';
+    btn.textContent = actionLabel;
+    btn.onclick = ()=>{ hideToast(); actionFn && actionFn(); };
+  }else{
+    btn.style.display='none'; btn.onclick=null;
+  }
+  el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(hideToast, actionLabel ? 5200 : 2600);
+}
+function hideToast(){ $('toast').classList.remove('show'); }
+
+/* ---------- Stempel-Overlay ---------- */
+function showOverlay({title, sub, neutral, stampWord, undoTask}){
+  const ov = $('overlay');
+  ov.classList.toggle('neutral', !!neutral);
+  $('stampEl').style.display = neutral ? 'none' : 'flex';
+  $('stampWord').textContent = stampWord || 'ERLEDIGT';
+  $('ovTitle').textContent = title;
+  $('ovSub').textContent = sub || '';
+  $('ovUndo').style.display = undoTask ? 'inline-block' : 'none';
+  $('ovUndo').onclick = ()=>{ if(undoTask){ undoDone(undoTask); showToast('Zurückgenommen'); } ov.classList.remove('show'); };
+  ov.classList.add('show');
+}
+$('ovClose').addEventListener('click', ()=>$('overlay').classList.remove('show'));
+
+/* ---------- NFC-Scan verarbeiten (#do=ID in der Adresse) ---------- */
+function processHash(){
+  const m = location.hash.match(/do=([a-z0-9]+)/i);
+  if(!m) return;
+  history.replaceState(null, '', location.pathname + location.search); // Hash entfernen, damit Neuladen nicht doppelt zählt
+  const t = state.tasks.find(x => x.id === m[1]);
+  if(!t){
+    showOverlay({
+      neutral:true,
+      title:'Aufgabe nicht gefunden',
+      sub:'Der Tag verweist auf eine Aufgabe, die auf diesem Gerät nicht existiert — sie wurde gelöscht oder die Daten wurden hier noch nicht importiert.'
+    });
+    return;
+  }
+  // Doppel-Scan-Schutz: innerhalb von 5 Minuten nicht erneut eintragen
+  if(t.lastDone && (Date.now() - t.lastDone) < 5*60000){
+    showOverlay({
+      title: t.name,
+      stampWord:'SCHON OK',
+      sub:'Wurde ' + fmtAgo(t.lastDone) + ' bereits eingetragen.',
+    });
+    return;
+  }
+  markDone(t);
+  showOverlay({
+    title: t.name,
+    sub:'Eingetragen: ' + fmtAgo(t.lastDone) + (t.intervalDays ? ' · wieder fällig in ' + t.intervalDays + ' Tagen' : ''),
+    undoTask: t
+  });
+}
+
+/* ---------- Export / Import ---------- */
+$('btnExport').addEventListener('click', ()=>{
+  const blob = new Blob([JSON.stringify(state, null, 2)], {type:'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'homeapp-rath-backup-' + new Date().toISOString().slice(0,10) + '.json';
+  a.click();
+  URL.revokeObjectURL(a.href);
+});
+$('btnImport').addEventListener('click', ()=>$('fileImport').click());
+$('fileImport').addEventListener('change', ev=>{
+  const file = ev.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = ()=>{
+    try{
+      const data = JSON.parse(reader.result);
+      if(!data || !Array.isArray(data.tasks)) throw new Error('Format');
+      if(!confirm('Import ersetzt die aktuellen Aufgaben auf diesem Gerät (' + state.tasks.length + ' Stück). Fortfahren?')) return;
+      state = data;
+      saveState(); render();
+      showToast('Import abgeschlossen ✓');
+    }catch(e){
+      showToast('Datei konnte nicht gelesen werden');
+    }
+    ev.target.value = '';
+  };
+  reader.readAsText(file);
+});
+
+/* ---------- Hinweise je nach Umgebung ---------- */
+(function banners(){
+  let html = '';
+  if(!HAS_STORAGE){
+    html += '<div class="banner"><b>Vorschau-Modus:</b> Änderungen werden hier nicht dauerhaft gespeichert. Lade die Datei herunter und stelle sie online (siehe Hilfe unten) — dann bleibt alles erhalten und die NFC-Links funktionieren.</div>';
+  } else if(location.protocol === 'file:'){
+    html += '<div class="banner"><b>Lokale Datei:</b> Zum Verwalten okay — die NFC-Links funktionieren aber erst, wenn die App online liegt (z. B. GitHub Pages, siehe Hilfe unten).</div>';
+  }
+  $('banners').innerHTML = html;
+})();
+
+/* ---------- Start ---------- */
+render();
+processHash();
+</script>
+</body>
+</html>
